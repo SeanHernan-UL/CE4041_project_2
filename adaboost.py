@@ -50,7 +50,31 @@ class Adaboost():
             if idx_misclassified.iloc[i]:
                 epsilon += df['weights'].iloc[i]
 
-        return ({'feature': feature}, {'location' : float(line)}, {'ploarity' :polarity}), epsilon
+        return (({'feature': feature}, {'location' : float(line)}, {'polarity' :polarity}),
+                (epsilon, smallest_misclassifications))
+
+    def update_weights(self,df, stump_vals, num_misclassifications):
+
+        # extract stump_vals
+        feature = stump_vals[0]['feature']
+        line_location = stump_vals[1]['location']
+
+        # loop through feature values
+        # work them out in a numpy array, then overwrite the dataframe col
+        arr = np.zeros([len(df),1])
+        for i in range(0, len(df)):
+            # if feature values > line location
+            if df[feature].iloc[i] > line_location:
+                # weight = 0.5/misclassifications
+                arr[i] = 0.5/num_misclassifications
+            else:
+                # weight = 0.5/(len(df)-misclassifications)
+                arr[i] = 0.5/(len(df) - num_misclassifications)
+
+        # update dataframe
+        df['weights'] = arr
+
+        return df # with update weights...
 
     def _test_split(self, df, split):
 
@@ -65,16 +89,16 @@ class Adaboost():
         # split the dataframe
         # already sorted so all we care about are the class and index
         if split != 0:
-            aboveSplit = df.iloc[:split,:]
+            aboveSplit = df.iloc[:split, :]
 
-            aboveIdx[0] =  aboveSplit['class'].isin([-1])
+            aboveIdx[0] = aboveSplit['class'].isin([-1])
             aboveMisclassified[0] = sum(aboveIdx[0])
 
             aboveIdx[1] = aboveSplit['class'].isin([1])
             aboveMisclassified[1] = sum(aboveIdx[1])
 
         if split != len(df):
-            belowSplit = df.iloc[split:,:]
+            belowSplit = df.iloc[split:, :]
 
             belowIdx[0] = belowSplit['class'].isin([1])
             belowMisclassified[0] = sum(belowIdx[0])
@@ -87,16 +111,10 @@ class Adaboost():
 
         # work out which case has less misclassifications
         case = 0
-        polarity = [1,-1]
-        if (aboveMisclassified[1]+belowMisclassified[1]) < (aboveMisclassified[0]+belowMisclassified[0]):
+        polarity = [1, -1]
+        if (aboveMisclassified[1] + belowMisclassified[1]) < (aboveMisclassified[0] + belowMisclassified[0]):
             case = 1
             polarity = [-1, 1]
 
-        return pd.concat([aboveIdx[case],belowIdx[case]]), (aboveMisclassified[case] + belowMisclassified[case]), polarity
-
-
-
-
-
-
-
+        return pd.concat([aboveIdx[case], belowIdx[case]]), (
+                    aboveMisclassified[case] + belowMisclassified[case]), polarity

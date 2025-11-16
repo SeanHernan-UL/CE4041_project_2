@@ -22,24 +22,42 @@ print(train.head())
 # create adaboost object
 ada = Adaboost()
 
+# create dict to store our collection of bad models
+model_vals = []
+
+# duplicate the train dataframe so the original isn't messed up by training model
+training_df = train
+
 # loop x amount of times, such that at some point we will have enough
 # weak classifiers to be strong together
-bigNum = 1000
-for x in range(0, bigNum):
+big_num = 10
+for x in range(0, big_num):
 
     # train weak learner, h
-    stump_vals, epsilon = ada.train_treestump(train, 'y')
+    stump_vals, bonus_vals = ada.train_treestump(training_df, 'x')
 
     for dict in stump_vals:
         print(dict)
 
     # set alpha value for given learner
     # judge how bad our weak learner is...
+    epsilon = bonus_vals[0]
     alpha = (1/2)*math.log((1-epsilon)/epsilon)
+
+    # store our model values
+    model_vals.append([stump_vals, alpha])
+
+    num_misclassified = bonus_vals[1]
 
     # update weights distribution
     # misclassified points need to account for .5 of the weight...
+    # currently have 382 misclassified points, their new weight is 0.5/382
+    # we need to find these points, and the other points whose weights will be 0.5/(1200-382)
+    training_df = ada.update_weights(training_df, stump_vals, num_misclassified)
 
     print('poop')
 
 # return the strong classifier...
+print(model_vals)
+
+print('poop')
