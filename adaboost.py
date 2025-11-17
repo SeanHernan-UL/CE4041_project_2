@@ -50,7 +50,7 @@ class Adaboost():
         # which weights to add up...
         epsilon = 0
         for i in range(0, len(df)):
-            if idx_misclassified.iloc[i]:
+            if idx_misclassified.iloc[i].any():
                 epsilon += df['weights'].iloc[i]
 
         return (({'feature': feature}, {'location' : float(line)}, {'polarity' :polarity}),
@@ -61,6 +61,7 @@ class Adaboost():
         # extract stump_vals
         feature = stump_vals[0]['feature']
         line_location = stump_vals[1]['location']
+        polarity = stump_vals[2]['polarity']
 
         epsilon = bonus_vals[0]
         num_misclassifications = bonus_vals[1]
@@ -73,12 +74,20 @@ class Adaboost():
         arr = df['weights'].to_numpy()
         for i in range(0, len(df)):
             # if feature values > line location
-            if df[feature].iloc[i] > line_location:
-                # weight = 0.5/misclassifications
-                arr[i] *= 1/(2*epsilon) # 0.5/num_misclassifications
+            if (df[feature].iloc[i] > line_location):
+                if (df['class'].iloc[i] == polarity[0]):
+                    # weight = 0.5/misclassifications
+                    arr[i] *= 1/(2*epsilon) # 0.5/num_misclassifications
+                else:
+                    # weight = 0.5/(len(df)-misclassifications)
+                    arr[i] *= 1/(2*(1-epsilon)) #0.5/(len(df) - num_misclassifications)
             else:
-                # weight = 0.5/(len(df)-misclassifications)
-                arr[i] *= 1/(2*(1-epsilon)) #0.5/(len(df) - num_misclassifications)
+                if (df['class'].iloc[i] == polarity[1]):
+                    # weight = 0.5/misclassifications
+                    arr[i] *= 1/(2*epsilon) # 0.5/num_misclassifications
+                else:
+                    # weight = 0.5/(len(df)-misclassifications)
+                    arr[i] *= 1/(2*(1-epsilon)) #0.5/(len(df) - num_misclassifications)
 
         # update dataframe
         df['weights'] = arr
@@ -146,4 +155,4 @@ class Adaboost():
         # print for debug
         # print(f'{split}\t{above_misclassified}\t{below_misclassified}\t\t{total_weight_score[0]}\t{total_weight_score[1]}')
 
-        return pd.concat([above_idx, below_idx]), (above_misclassified + below_misclassified), max(total_weight_score), polarity
+        return pd.concat([above_idx, below_idx], axis=0), (above_misclassified + below_misclassified), max(total_weight_score), polarity
