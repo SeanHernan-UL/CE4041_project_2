@@ -30,7 +30,7 @@ training_df = train
 
 # loop x amount of times, such that at some point we will have enough
 # weak classifiers to be strong together
-big_num = 10
+big_num = 100
 features = ['x','y']
 for x in range(0, big_num):
     # train weak learner, h
@@ -55,26 +55,27 @@ for x in range(0, big_num):
     training_df = ada.update_weights(training_df, stump_vals, bonus_vals)
 
     # visualise model, with updated weights...
-    pallete = ['#008080', '#FF00FF']
-    plt.figure(1)
-    # plot data
-    sns.scatterplot(x='x', y='y', data=train, hue='class', palette=pallete, size='weights')
-    # draw horizonta/vertical split line
-    if x%2 == 0:
-        plt.vlines(x=stump_vals[1]['location'], ymin=-2,  ymax=2, colors='black')
-    else:
-        plt.hlines(y=stump_vals[1]['location'], xmin=-2, xmax=2, colors='black')
-    plt.title('adaboost-train-24')
-    plt.show()
+    # pallete = ['#008080', '#FF00FF']
+    # plt.figure(1)
+    # # plot data
+    # sns.scatterplot(x='x', y='y', data=train, hue='class', palette=pallete, size='weights')
+    # # draw horizonta/vertical split line
+    # if x%2 == 0:
+    #     plt.vlines(x=stump_vals[1]['location'], ymin=-2,  ymax=2, colors='black')
+    # else:
+    #     plt.hlines(y=stump_vals[1]['location'], xmin=-2, xmax=2, colors='black')
+    # plt.title(f'adaboost-train-24: round {x}')
+    # plt.show()
 
     print('poop')
 
     print(train.head())
 
 # return the strong classifier...
-for weakness in model_vals:
-    print(weakness)
+for weak in model_vals:
+    print(weak)
 
 # visualise final model...
+ada.visualise__model(model_vals,'bingbong')
 
 print('poop')

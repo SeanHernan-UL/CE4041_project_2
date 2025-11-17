@@ -10,8 +10,7 @@ class Adaboost():
         # sort the data for the given feature...
         df.sort_values(feature, inplace=True, ignore_index=True)
 
-        data = []
-
+        scores = np.zeros(len(df))
         # try and split to minimize the misclassifications...
         # we just brute force :)
         smallest_misclassifications = len(df)
@@ -21,7 +20,7 @@ class Adaboost():
         polarity = [0,0]
         for split in range(0,len(df)):
             idx, num, score, pol= Adaboost._test_split(self,df, split)
-            data.append([idx,num])
+            scores[split] = score
 
             # find the smallest number of misclassifications...
             if score > best_score:
@@ -52,6 +51,8 @@ class Adaboost():
         for i in range(0, len(df)):
             if idx_misclassified.iloc[i].any():
                 epsilon += df['weights'].iloc[i]
+
+        scores_df = pd.DataFrame({'Score': scores}, index=df.index)
 
         return (({'feature': feature}, {'location' : float(line)}, {'polarity' :polarity}),
                 (epsilon, smallest_misclassifications))
@@ -93,6 +94,82 @@ class Adaboost():
         df['weights'] = arr
 
         return df # with update weights...
+
+    def visualise_model(self,model_vals, limits):
+
+        # contour & contourf
+
+        ## this is horrible...
+
+        # we want to get the steppy plot that Colin had
+
+        limits = [[-2.2,2.2],[-2.2,2.2]]
+
+        # init big grid to all zeros
+        size = 100
+        grid = np.zeros([size,size])
+        print(grid.shape)
+
+        # iterate over all weak models
+        for weak in model_vals:
+
+            # extract stump_vals
+            feature = weak[0][0]['feature']
+            line_location = weak[0][1]['location']
+            polarity = weak[0][2]['polarity']
+
+            alpha = weak[1]
+
+            # if feature == 'x'
+            axis = 0
+            if feature == 'y':
+                axis = 1
+
+            actual_numbers = np.linspace(limits[axis][0], limits[axis][1], size)
+
+            for idx in range(0,size):
+                # 'draw' line and add the polarity multiplied by the models alpha to the corresponding
+                # values on the grid
+
+                if actual_numbers[idx] > line_location:
+                    if axis == 0:
+                        grid[:,idx] += polarity[1]*alpha
+                    else:
+                        grid[idx,:] += polarity[1]*alpha
+                else:
+                    if axis == 0:
+                        grid[:,idx] += polarity[0]*alpha
+                    else:
+                        grid[idx,:] += polarity[0]*alpha
+
+        # round to 1 or -1
+        grid_rounded = np.zeros([size,size])
+        for i in range(0,size):
+            for j in range(0,size):
+                if grid[i,j] > 0:
+                    grid_rounded[i,j] = 1
+                else:
+                    grid_rounded[i,j] = -1
+
+
+        # do a 3d plot with levels visualised with colour
+        # Create a 3D line plot with Seaborn
+        # doing heatmap for now
+        plt.figure(1)
+        ax = sns.heatmap(grid, annot=False, square=True)
+        ax.invert_yaxis()
+        plt.xlabel('Actual Value')
+        plt.ylabel('Predicted value')
+        plt.title(f'Confusion Matrix')
+
+        plt.figure(2)
+        ax = sns.heatmap(grid_rounded, annot=False, square=True)
+        ax.invert_yaxis()
+        plt.xlabel('Actual Value')
+        plt.ylabel('Predicted value')
+        plt.title(f'Confusion Matrix')
+
+        plt.show()
 
     def _test_split(self, df, split):
 
