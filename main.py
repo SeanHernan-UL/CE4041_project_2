@@ -30,11 +30,12 @@ training_df = train
 
 # loop x amount of times, such that at some point we will have enough
 # weak classifiers to be strong together
-big_num = 10
+big_num = 4
+features = ['x','y']
 for x in range(0, big_num):
 
     # train weak learner, h
-    stump_vals, bonus_vals = ada.train_treestump(training_df, 'x')
+    stump_vals, bonus_vals = ada.train_treestump(training_df, features[x%2])
 
     for dict in stump_vals:
         print(dict)
@@ -46,16 +47,17 @@ for x in range(0, big_num):
 
     # store our model values
     model_vals.append([stump_vals, alpha])
-
-    num_misclassified = bonus_vals[1]
+    print(model_vals)
 
     # update weights distribution
     # misclassified points need to account for .5 of the weight...
     # currently have 382 misclassified points, their new weight is 0.5/382
     # we need to find these points, and the other points whose weights will be 0.5/(1200-382)
-    training_df = ada.update_weights(training_df, stump_vals, num_misclassified)
+    training_df = ada.update_weights(training_df, stump_vals, bonus_vals)
 
     print('poop')
+
+    print(train.head())
 
 # return the strong classifier...
 print(model_vals)
