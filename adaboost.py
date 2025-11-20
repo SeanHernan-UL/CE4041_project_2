@@ -2,10 +2,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib import colors
+
 
 class Adaboost():
 
-    def train_treestump(self, df, feature):
+    def train_stump(self, df, feature):
 
         # sort the data for the given feature...
         df.sort_values(feature, inplace=True, ignore_index=True)
@@ -54,15 +56,14 @@ class Adaboost():
 
         scores_df = pd.DataFrame({'Score': scores}, index=df.index)
 
-        return (({'feature': feature}, {'location' : float(line)}, {'polarity' :polarity}),
-                (epsilon, smallest_misclassifications))
+        return (feature, float(line), polarity), (epsilon, smallest_misclassifications)
 
     def update_weights(self,df, stump_vals, bonus_vals):
 
         # extract stump_vals
-        feature = stump_vals[0]['feature']
-        line_location = stump_vals[1]['location']
-        polarity = stump_vals[2]['polarity']
+        feature = stump_vals[0]
+        line_location = stump_vals[1]
+        polarity = stump_vals[2]
 
         epsilon = bonus_vals[0]
         num_misclassifications = bonus_vals[1]
@@ -95,7 +96,7 @@ class Adaboost():
 
         return df # with update weights...
 
-    def visualise_model(self,model_vals, limits):
+    def visualise_model(self,model_vals, limits, dataset_points_df):
 
         # contour & contourf
 
@@ -103,42 +104,45 @@ class Adaboost():
 
         # we want to get the steppy plot that Colin had
 
-        limits = [[-2.2,2.2],[-2.2,2.2]]
-
         # init big grid to all zeros
         size = 100
         grid = np.zeros([size,size])
         print(grid.shape)
 
+        # convert model vals to numpy
+        if isinstance(model_vals, pd.DataFrame):
+            model_vals = model_vals.to_numpy()
+
+        # get x and y axes
+        x_axis = np.linspace(limits[0][0], limits[0][1], size)
+        y_axis = np.linspace(limits[1][0], limits[1][1], size)
+
         # iterate over all weak models
         for weak in model_vals:
 
             # extract stump_vals
-            feature = weak[0][0]['feature']
-            line_location = weak[0][1]['location']
-            polarity = weak[0][2]['polarity']
-
-            alpha = weak[1]
+            feature = weak[0]
+            line_location = weak[1]
+            polarity = weak[2]
+            alpha = weak[3]
 
             # if feature == 'x'
             axis = 0
             if feature == 'y':
                 axis = 1
 
-            actual_numbers = np.linspace(limits[axis][0], limits[axis][1], size)
-
             for idx in range(0,size):
                 # 'draw' line and add the polarity multiplied by the models alpha to the corresponding
                 # values on the grid
 
-                if actual_numbers[idx] > line_location:
-                    if axis == 0:
+                if feature == 'x':
+                    if x_axis[idx] > line_location:
                         grid[:,idx] += polarity[1]*alpha
                     else:
-                        grid[idx,:] += polarity[1]*alpha
-                else:
-                    if axis == 0:
-                        grid[:,idx] += polarity[0]*alpha
+                        grid[idx,:] += polarity[0]*alpha
+                else: # feature == 'y'
+                    if y_axis[idx] > line_location:
+                        grid[:,idx] += polarity[1]*alpha
                     else:
                         grid[idx,:] += polarity[0]*alpha
 
@@ -156,13 +160,39 @@ class Adaboost():
         # Create a 3D line plot with Seaborn
         # doing heatmap for now
         plt.figure(1)
+        ax = plt.axes()
+        cont = ax.contourf(x_axis, y_axis, grid)
+        plt.colorbar(cont)
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title(f"Model 'Heatmap'")
+
+        # round to [1,-1] values, and plot
+        # also plot the train set ontop...
+        plt.figure(2)
+        pallete = colors.LinearSegmentedColormap.from_list('pallete',['#E3F2FD', '#C8E6C9'])
+        ax = plt.axes()
+        cont = ax.contourf(x_axis, y_axis, grid_rounded, cmap=pallete)
+        plt.colorbar(cont)
+
+        pallete = ['#1B5E20', '#0D47A1']
+        sns.scatterplot(x='x', y='y', data=dataset_points_df, hue='class', palette=pallete)
+
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title(f"Model 'Heatmap', with overlayed dataset")
+
+        # do a 3d plot with levels visualised with colour
+        # Create a 3D line plot with Seaborn
+        # doing heatmap for now
+        plt.figure(3)
         ax = sns.heatmap(grid, annot=False, square=True)
         ax.invert_yaxis()
         plt.xlabel('Actual Value')
         plt.ylabel('Predicted value')
         plt.title(f'Confusion Matrix')
 
-        plt.figure(2)
+        plt.figure(4)
         ax = sns.heatmap(grid_rounded, annot=False, square=True)
         ax.invert_yaxis()
         plt.xlabel('Actual Value')
@@ -170,6 +200,15 @@ class Adaboost():
         plt.title(f'Confusion Matrix')
 
         plt.show()
+
+
+    # def test_model(self, train, model_vals):
+    #
+    #     # given a dataset, tries to classify it based off given model_vals
+    #
+    # def _predict(self, model_vals):
+    #
+    #     # given a point tries to classifiy it based off given model_vals
 
     def _test_split(self, df, split):
 

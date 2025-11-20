@@ -1,9 +1,12 @@
+import os
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import math
 from mpl_toolkits.mplot3d import Axes3D
+from datetime import datetime
 
 from adaboost import Adaboost
 
@@ -30,22 +33,25 @@ training_df = train
 
 # loop x amount of times, such that at some point we will have enough
 # weak classifiers to be strong together
-big_num = 100
+big_num = 200
 features = ['x','y']
 for x in range(0, big_num):
     # train weak learner, h
-    stump_vals, bonus_vals = ada.train_treestump(training_df, features[x%2])
+    stump_vals, bonus_vals = ada.train_stump(training_df, features[x%2])
 
-    for dict in stump_vals:
-        print(dict)
+    # print stump vals
+    print(f'feature: {stump_vals[0]}, location: {stump_vals[1]}, polarity: {stump_vals[2]}')
 
     # set alpha value for given learner
     # judge how bad our weak learner is...
     epsilon = bonus_vals[0]
+    print(f'epsilon: {epsilon}')
     alpha = (1/2)*math.log((1-epsilon)/epsilon)
+    print(f'alpha: {alpha}')
 
     # store our model values
-    model_vals.append([stump_vals, alpha])
+    # just taking first value of polarity, since second can be deduced from first...
+    model_vals.append([stump_vals[0],stump_vals[1],stump_vals[2], alpha])
     print(model_vals)
 
     # update weights distribution
@@ -67,15 +73,26 @@ for x in range(0, big_num):
     # plt.title(f'adaboost-train-24: round {x}')
     # plt.show()
 
-    print('poop')
-
     print(train.head())
 
 # return the strong classifier...
 for weak in model_vals:
     print(weak)
 
+# store model values in cs
+final_model = pd.DataFrame(model_vals, columns=['feature', 'location', 'polarity', 'alpha'])
+
+# get a timestamp
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# check if models folder exists, if not, create...
+os.makedirs('./models', exist_ok=True)
+
+# store to csv
+final_model.to_csv(f'models/adaboost_model_{timestamp}.csv', index=False)
+
 # visualise final model...
-ada.visualise__model(model_vals,'bingbong')
+limits = [[-2.2,2.2],[-2.2,2.2]]
+ada.visualise_model(final_model,limits,training_df)
 
 print('poop')
