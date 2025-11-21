@@ -174,7 +174,7 @@ class Adaboost():
         # round to [1,-1] values, and plot
         # also plot the train set ontop...
         plt.figure(2)
-        pallete = colors.LinearSegmentedColormap.from_list('pallete',['#C8E6C9', '#E3F2FD'])
+        pallete = colors.LinearSegmentedColormap.from_list('pallete',['#E3F2FD', '#C8E6C9'])
         ax = plt.axes()
         cont = ax.contourf(x_axis, y_axis, grid_rounded, cmap=pallete)
         plt.colorbar(cont)
@@ -206,11 +206,13 @@ class Adaboost():
         plt.show()
 
 
-    # def test_model(self, train, model_vals):
-    #
-    #     # given a dataset, tries to classify it based off given model_vals
+    def test_model(self, train, model_vals):
+
+        # given a dataset, tries to classify it based off given model_vals
 
             # for each feature I can create bins
+
+
     #
     # def _predict(self, model_vals):
     #

@@ -48,6 +48,7 @@ for x in range(0, big_num):
     # judge how bad our weak learner is...
     epsilon = bonus_vals[0]
 
+
     print(f'epsilon: {epsilon}')
     alpha = (1/2)*math.log((1-epsilon)/epsilon)
     print(f'alpha: {alpha}')
