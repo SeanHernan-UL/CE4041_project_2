@@ -48,6 +48,13 @@ def plot_decision_boundary(ax, ada, X, y, T, title):
 
 
 def main():
+    # print group + members names/ids
+    print('## Group 1')
+    members = [('Kanvar Murray', 22374698), ('Seán Hernan', 22348948), ('Madeline Ware', 21306591)]
+    for member in members:
+        print(f'{member[0]} : {member[1]}')
+    print('')
+
     # load training and test sets
     points_train, classes_train = load_data("adaboost-train-24.txt") # this has 400 datapoints
     points_test, classes_test = load_data("adaboost-test-24.txt") # this has 1200 datapoints <-- feels like this should be the training set?

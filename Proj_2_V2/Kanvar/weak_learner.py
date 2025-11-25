@@ -3,6 +3,7 @@
 # student id: 22374698
 # date: 24/11/25
 
+# members = [('Kanvar Murray', 22374698), ('Seán Hernan', 22348948), ('Madeline Ware', 21306591)]
 
 import numpy as np
 
